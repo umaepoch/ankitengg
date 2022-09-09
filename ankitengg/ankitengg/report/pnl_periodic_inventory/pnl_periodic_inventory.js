@@ -3,12 +3,12 @@
 
 
 frappe.require("assets/erpnext/js/financial_statements.js", function() {
-	frappe.query_reports["Profit Losss"] = $.extend({},
+	frappe.query_reports["PnL Periodic Inventory"] = $.extend({},
 		erpnext.financial_statements);
 
-	erpnext.utils.add_dimensions('Profit Losss', 10);
+	erpnext.utils.add_dimensions('PnL Periodic Inventory', 10);
 
-	frappe.query_reports["Profit Losss"]["filters"].push(
+	frappe.query_reports["PnL Periodic Inventory"]["filters"].push(
 		{
 			"fieldname": "project",
 			"label": __("Project"),
@@ -16,11 +16,6 @@ frappe.require("assets/erpnext/js/financial_statements.js", function() {
 			get_data: function(txt) {
 				return frappe.db.get_link_options('Project', txt);
 			}
-		},
-		{
-			"fieldname": "accumulated_values",
-			"label": __("Accumulated Values"),
-			"fieldtype": "Check"
 		},
 		{
 			"fieldname": "include_default_book_entries",
