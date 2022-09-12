@@ -12,10 +12,24 @@ from erpnext.accounts.report.financial_statements import (
 	get_filtered_list_for_consolidated_report,
 	get_period_list,
 )
-
+from ankitengg.ankitengg.report.financial_statement_test import (
+	get_columns_test,
+	get_data_test,
+	get_filtered_list_for_consolidated_report_test,
+	get_period_list_test,
+)
 
 def execute(filters=None):
 	period_list = get_period_list(
+		filters.from_fiscal_year,
+		filters.to_fiscal_year,
+		filters.period_start_date,
+		filters.period_end_date,
+		filters.filter_based_on,
+		filters.periodicity,
+		company=filters.company,
+	)
+	period_list_test = get_period_list_test(
 		filters.from_fiscal_year,
 		filters.to_fiscal_year,
 		filters.period_start_date,
@@ -35,6 +49,16 @@ def execute(filters=None):
 		ignore_closing_entries=True,
 		ignore_accumulated_values_for_fy=True,
 	)
+	income_test = get_data_test(
+		filters.company,
+		"Income",
+		"Credit",
+		period_list_test,
+		filters=filters,
+		accumulated_values=filters.accumulated_values,
+		ignore_closing_entries=True,
+		ignore_accumulated_values_for_fy=True,
+	)
 
 	expense = get_data(
 		filters.company,
@@ -46,30 +70,66 @@ def execute(filters=None):
 		ignore_closing_entries=True,
 		ignore_accumulated_values_for_fy=True,
 	)
+	expense_test = get_data(
+		filters.company,
+		"Expense",
+		"Debit",
+		period_list_test,
+		filters=filters,
+		accumulated_values=filters.accumulated_values,
+		ignore_closing_entries=True,
+		ignore_accumulated_values_for_fy=True,
+	)
 
 	net_profit_loss = get_net_profit_loss(
 		income, expense, period_list, filters.company, filters.presentation_currency
+	)
+	net_profit_loss_test = get_net_profit_loss_test(
+		income, expense, period_list_test, filters.company, filters.presentation_currency
 	)
 
 	data = []
 	data.extend(income or [])
 	data.extend(expense or [])
+	sum_data=[]
+	sum_data.extend(income_test or [])
+	sum_data.extend(expense_test or [])
 	if net_profit_loss:
 		data.append(net_profit_loss)
-
+	if net_profit_loss_test:
+    		data.append(net_profit_loss_test)
 	columns = get_columns(
 		filters.periodicity, period_list, filters.accumulated_values, filters.company
 	)
 
 	chart = get_chart_data(filters, columns, income, expense, net_profit_loss)
-
+	print("data-----------",data)
+	print("sum_data",sum_data)
+	print("filters.periodicity",filters.periodicity)
+	for x in range(len(data)):
+		if data[x].get('account_name') == 'Closing Stocks' and filters.periodicity=="Quarterly":
+			print('quaterly data ----', data[x])
+			print('monthly data ----', sum_data[x])
+			data[x]['sep_2022'] = sum_data[x]['sep_2022']
+			data[x]['jun_2022'] = sum_data[x]['jun_2022']
+			data[x]['dec_2022'] = sum_data[x]['dec_2022']
+			data[x]['mar_2023'] = sum_data[x]['mar_2023']
+			data[x]['total']=sum_data[x]['jun_2022']+sum_data[x]['sep_2022']+sum_data[x]['dec_2022']+sum_data[x]['mar_2023']
+		if data[x].get('account_name') == 'Opening Stock' and filters.periodicity=="Quarterly":
+			print('quaterly data ----', data[x])
+			print('monthly data ----', sum_data[x])
+			data[x]['sep_2022'] = sum_data[x]['jul_2022']
+			data[x]['jun_2022'] = sum_data[x]['apr_2022']
+			data[x]['dec_2022'] = sum_data[x]['oct_2022']
+			data[x]['mar_2023'] = sum_data[x]['jan_2023']
+			data[x]['total']=sum_data[x]['apr_2022']+sum_data[x]['jul_2022']+sum_data[x]['oct_2022']+sum_data[x]['jan_2023']
 	currency = filters.presentation_currency or frappe.get_cached_value(
 		"Company", filters.company, "default_currency"
 	)
 	report_summary = get_report_summary(
 		period_list, filters.periodicity, income, expense, net_profit_loss, currency, filters
 	)
-
+	print("data",data)
 	return columns, data, None, chart, report_summary
 
 
@@ -142,6 +202,32 @@ def get_net_profit_loss(income, expense, period_list, company, currency=None, co
 	if has_value:
 		return net_profit_loss
 
+def get_net_profit_loss_test(income, expense, period_list_test, company, currency=None, consolidated=False):
+	total = 0
+	net_profit_loss = {
+		"account_name": "'" + _("Profit for the year") + "'",
+		"account": "'" + _("Profit for the year") + "'",
+		"warn_if_negative": True,
+		"currency": currency or frappe.get_cached_value("Company", company, "default_currency"),
+	}
+
+	has_value = False
+
+	for period in period_list_test:
+		key = period if consolidated else period.key
+		total_income = flt(income[-2][key], 3) if income else 0
+		total_expense = flt(expense[-2][key], 3) if expense else 0
+
+		net_profit_loss[key] = total_income - total_expense
+
+		if net_profit_loss[key]:
+			has_value = True
+
+		total += flt(net_profit_loss[key])
+		net_profit_loss["total"] = total
+
+	if has_value:
+		return net_profit_loss
 
 def get_chart_data(filters, columns, income, expense, net_profit_loss):
 	labels = [d.get("label") for d in columns[2:]]
