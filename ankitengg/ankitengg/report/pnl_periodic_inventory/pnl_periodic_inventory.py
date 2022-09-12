@@ -85,7 +85,7 @@ def execute(filters=None):
 		income, expense, period_list, filters.company, filters.presentation_currency
 	)
 	net_profit_loss_test = get_net_profit_loss_test(
-		income, expense, period_list_test, filters.company, filters.presentation_currency
+		income_test, expense_test, period_list_test, filters.company, filters.presentation_currency
 	)
 
 	data = []
@@ -97,7 +97,7 @@ def execute(filters=None):
 	if net_profit_loss:
 		data.append(net_profit_loss)
 	if net_profit_loss_test:
-    		data.append(net_profit_loss_test)
+		data.append(net_profit_loss_test)
 	columns = get_columns(
 		filters.periodicity, period_list, filters.accumulated_values, filters.company
 	)
@@ -202,7 +202,7 @@ def get_net_profit_loss(income, expense, period_list, company, currency=None, co
 	if has_value:
 		return net_profit_loss
 
-def get_net_profit_loss_test(income, expense, period_list_test, company, currency=None, consolidated=False):
+def get_net_profit_loss_test(income_test, expense_test, period_list_test, company, currency=None, consolidated=False):
 	total = 0
 	net_profit_loss = {
 		"account_name": "'" + _("Profit for the year") + "'",
@@ -212,11 +212,11 @@ def get_net_profit_loss_test(income, expense, period_list_test, company, currenc
 	}
 
 	has_value = False
-
+	print("period_list_test",period_list_test)
 	for period in period_list_test:
 		key = period if consolidated else period.key
-		total_income = flt(income[-2][key], 3) if income else 0
-		total_expense = flt(expense[-2][key], 3) if expense else 0
+		total_income = flt(income_test[-2][key], 3) if income_test else 0
+		total_expense = flt(expense_test[-2][key], 3) if expense_test else 0
 
 		net_profit_loss[key] = total_income - total_expense
 
