@@ -123,6 +123,64 @@ def execute(filters=None):
 			data[x]['dec_2022'] = sum_data[x]['oct_2022']
 			data[x]['mar_2023'] = sum_data[x]['jan_2023']
 			data[x]['total']=sum_data[x]['apr_2022']+sum_data[x]['jul_2022']+sum_data[x]['oct_2022']+sum_data[x]['jan_2023']
+	june_sum=0
+	sep_sum=0
+	dec_sum=0
+	mar_sum=0
+	june_sum_ex=0
+	sep_sum_ex=0
+	dec_sum_ex=0
+	mar_sum_ex=0
+	array_index=0
+	flag = 0
+	for x in data:
+		if x.get('is_group') == 0 and "Income" in x.get('parent_account','None'):
+			print('adding')
+			june_sum += x.get('jun_2022', 0)
+			sep_sum += x.get('sep_2022', 0)
+			dec_sum += x.get('dec_2022', 0)
+			mar_sum += x.get('mar_2023', 0)
+		if x.get('is_group') == 0 and "Expenses" in x.get('parent_account','None'):
+			print('adding')
+			june_sum_ex += x.get('jun_2022', 0)
+			sep_sum_ex += x.get('sep_2022', 0)
+			dec_sum_ex += x.get('dec_2022', 0)
+			mar_sum_ex += x.get('mar_2023', 0)
+		if x.get('account', '') == 'Total Income (Credit)':
+			x['jun_2022'] = june_sum
+			x['sep_2022'] = sep_sum
+			x['dec_2022'] = dec_sum
+			x['mar_2023'] = mar_sum
+			x['total']=june_sum+sep_sum+dec_sum+mar_sum
+		if x.get('account', '') == 'Total Expense (Debit)':
+			x['jun_2022'] = june_sum_ex
+			x['sep_2022'] = sep_sum_ex
+			x['dec_2022'] = dec_sum_ex
+			x['mar_2023'] = mar_sum_ex
+			x['total']=june_sum_ex+sep_sum_ex+dec_sum_ex+mar_sum_ex
+	for x in data:
+		print("filters.company",filters.company)
+		abbr = frappe.db.get_value("Company",{"name":filters.company},"abbr")
+		print("company abbr",abbr)
+		company="Expenses - "+str(abbr)+""
+		print("--",company)
+		if(flag):
+			break
+		for keys, values in x.items():
+			if "account" == keys:
+				if "Expenses - "+str(abbr)+""== values:
+					x[keys] = values
+					flag=1
+					break
+		array_index = array_index+ 1
+	data[0]['jun_2022'] = june_sum
+	data[0]['sep_2022'] = sep_sum
+	data[0]['dec_2022'] = dec_sum
+	data[0]['mar_2023'] = mar_sum
+	data[array_index]["jun_2022"]=june_sum_ex
+	data[array_index]["sep_2022"]=sep_sum_ex
+	data[array_index]["dec_2022"]=dec_sum_ex
+	data[array_index]["mar_2023"]=mar_sum_ex
 	currency = filters.presentation_currency or frappe.get_cached_value(
 		"Company", filters.company, "default_currency"
 	)
