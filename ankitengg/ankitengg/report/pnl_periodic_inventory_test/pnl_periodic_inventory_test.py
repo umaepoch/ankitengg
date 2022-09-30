@@ -108,6 +108,14 @@ def execute(filters=None):
 	print("filters.periodicity",filters.periodicity)
 	print("filters.period_start_date",filters.period_start_date)
 	print("filters.period_end_date",filters.period_end_date)
+	close_diff_june_22=0
+	close_diff_sep_22=0
+	close_diff_dec_22=0
+	close_diff_mar_23=0
+	open_diff_june_22=0
+	open_diff_sep_22=0
+	open_diff_dec_22=0
+	open_diff_mar_23=0
 	for x in range(len(data)):
 		if data[x].get('account_name') == 'Closing Stocks' and filters.periodicity=="Quarterly":
 			print('quaterly data ----', data[x])
@@ -116,6 +124,10 @@ def execute(filters=None):
 			data[x]['jun_2022'] = sum_data[x]['jun_2022']
 			data[x]['dec_2022'] = sum_data[x]['dec_2022']
 			data[x]['mar_2023'] = sum_data[x]['mar_2023']
+			close_diff_june_22=data[x]['jun_2022']-sum_data[x]['jun_2022']
+			close_diff_sep_22=data[x]['sep_2022']-sum_data[x]['sep_2022']
+			close_diff_dec_22=data[x]['dec_2022']-sum_data[x]['dec_2022']
+			close_diff_mar_23=data[x]['mar_2023']-sum_data[x]['mar_2023']
 			data[x]['total']=sum_data[x]['jun_2022']+sum_data[x]['sep_2022']+sum_data[x]['dec_2022']+sum_data[x]['mar_2023']
 		if data[x].get('account_name') == 'Opening Stock' and filters.periodicity=="Quarterly":
 			print('quaterly data ----', data[x])
@@ -124,71 +136,77 @@ def execute(filters=None):
 			data[x]['jun_2022'] = sum_data[x]['apr_2022']
 			data[x]['dec_2022'] = sum_data[x]['oct_2022']
 			data[x]['mar_2023'] = sum_data[x]['jan_2023']
+			open_diff_june_22=data[x]['jun_2022']-sum_data[x]['apr_2022']
+			open_diff_sep_22=data[x]['sep_2022']-sum_data[x]['jul_2022']
+			open_diff_dec_22=data[x]['dec_2022']-sum_data[x]['oct_2022']
+			open_diff_mar_23=data[x]['mar_2023']- sum_data[x]['jan_2023']
 			data[x]['total']=sum_data[x]['apr_2022']+sum_data[x]['jul_2022']+sum_data[x]['oct_2022']+sum_data[x]['jan_2023']
-	june_sum=0
-	sep_sum=0
-	dec_sum=0
-	mar_sum=0
-	june_sum_ex=0
-	sep_sum_ex=0
-	dec_sum_ex=0
-	mar_sum_ex=0
-	array_index=0
-	flag = 0
-	for x in data:
-		if x.get('is_group') == 1 and "Income" in x.get('parent_account','None'):
-			print('adding')
-			june_sum += x.get('jun_2022', 0)
-			sep_sum += x.get('sep_2022', 0)
-			dec_sum += x.get('dec_2022', 0)
-			mar_sum += x.get('mar_2023', 0)
-		if x.get('is_group') == 1 and "Expenses" in x.get('parent_account','None'):
-			print('adding')
-			june_sum_ex += x.get('jun_2022', 0)
-			sep_sum_ex += x.get('sep_2022', 0)
-			dec_sum_ex += x.get('dec_2022', 0)
-			mar_sum_ex += x.get('mar_2023', 0)
-		if x.get('account', '') == 'Total Income (Credit)':
-			x['jun_2022'] = june_sum
-			x['sep_2022'] = sep_sum
-			x['dec_2022'] = dec_sum
-			x['mar_2023'] = mar_sum
-			x['total']=june_sum+sep_sum+dec_sum+mar_sum
-		if x.get('account', '') == 'Total Expense (Debit)':
-			x['jun_2022'] = june_sum_ex
-			x['sep_2022'] = sep_sum_ex
-			x['dec_2022'] = dec_sum_ex
-			x['mar_2023'] = mar_sum_ex
-			x['total']=june_sum_ex+sep_sum_ex+dec_sum_ex+mar_sum_ex
-		if x.get('account', '') == "'Profit for the year'":
-			x['jun_2022'] = june_sum-june_sum_ex
-			x['sep_2022'] = sep_sum-sep_sum_ex
-			x['dec_2022'] = dec_sum-dec_sum_ex
-			x['mar_2023'] = mar_sum-mar_sum_ex
-			x['total']=(june_sum+sep_sum+dec_sum+mar_sum)-(june_sum_ex+sep_sum_ex+dec_sum_ex+mar_sum_ex)
-	for x in data:
-		print("filters.company",filters.company)
-		abbr = frappe.db.get_value("Company",{"name":filters.company},"abbr")
-		print("company abbr",abbr)
-		company="Expenses - "+str(abbr)+""
-		print("--",company)
-		if(flag):
-			break
-		for keys, values in x.items():
-			if "account" == keys:
-				if "Expenses - "+str(abbr)+""== values:
-					x[keys] = values
-					flag=1
+	for x in range(len(data)):
+		if data[x].get('account_name') == 'Closing Stocks':
+			#print('quaterly data ----', data[x])
+			parent=data[x].get('parent_account')
+			print("parentof closing",parent)
+			for z in data:
+				#print(z['account'])
+				if z['account']==parent and z['parent_account']!=parent:
+					print("before",z['jun_2022'])
+					z['jun_2022']=z['jun_2022']-close_diff_june_22
+					z['sep_2022']=z['sep_2022']-close_diff_sep_22
+					z['dec_2022']=z['dec_2022']-close_diff_dec_22
+					z['mar_2023']=z['mar_2023']-close_diff_mar_23
+					z['total']=z['jun_2022']+z['sep_2022']+z['dec_2022']+z['mar_2023']
+					print("after in closing",z['jun_2022'])
 					break
-		array_index = array_index+ 1
-	data[0]['jun_2022'] = june_sum
-	data[0]['sep_2022'] = sep_sum
-	data[0]['dec_2022'] = dec_sum
-	data[0]['mar_2023'] = mar_sum
-	data[array_index-1]["jun_2022"]=june_sum_ex
-	data[array_index-1]["sep_2022"]=sep_sum_ex
-	data[array_index-1]["dec_2022"]=dec_sum_ex
-	data[array_index-1]["mar_2023"]=mar_sum_ex
+	for x in range(len(data)):
+		if data[x].get('account_name') == 'Opening Stock':
+			#print('quaterly data ----', data[x])
+			parent=data[x].get('parent_account')
+			print("parentof opening",parent)
+			for z in data:
+				#print(z['account'])
+				if z.get('account',None)==parent and z['parent_account']!=parent:
+					print("before",z['jun_2022'])
+					z['jun_2022']=z['jun_2022']-open_diff_june_22
+					z['sep_2022']=z['sep_2022']-open_diff_sep_22
+					z['dec_2022']=z['dec_2022']-open_diff_dec_22
+					z['mar_2023']=z['mar_2023']-open_diff_mar_23
+					z['total']=z['jun_2022']+z['sep_2022']+z['dec_2022']+z['mar_2023']
+					print("after in opening",z['jun_2022'])
+					break
+	for y in range(len(data)):
+		if data[y].get('account_name') == 'Income':
+			print('adding for account income',data[y].get('jun_2022'))
+			data[y]['jun_2022'] =data[y]['jun_2022']-close_diff_june_22
+			data[y]['sep_2022'] =data[y]['sep_2022']-close_diff_sep_22
+			data[y]['dec_2022'] =data[y]['dec_2022']-close_diff_dec_22
+			data[y]['mar_2023'] =data[y]['mar_2023']-close_diff_mar_23
+			break
+	for y in range(len(data)):
+		if data[y].get('account_name') == 'Expenses':
+			print('adding of account expense',data[y].get('jun_2022'))
+			data[y]['jun_2022'] =data[y]['jun_2022']-open_diff_june_22
+			data[y]['sep_2022'] =data[y]['sep_2022']-open_diff_sep_22
+			data[y]['dec_2022'] =data[y]['dec_2022']-open_diff_dec_22
+			data[y]['mar_2023'] =data[y]['mar_2023']-open_diff_mar_23
+			break
+	for y in range(len(data)):
+		if data[y].get('account_name') == 'Total Income (Credit)':
+			data[y]['jun_2022'] =data[y]['jun_2022']-close_diff_june_22
+			data[y]['sep_2022'] =data[y]['sep_2022']-close_diff_sep_22
+			data[y]['dec_2022'] =data[y]['dec_2022']-close_diff_dec_22
+			data[y]['mar_2023'] =data[y]['mar_2023']-close_diff_mar_23
+			data[y]['total']=data[y]['jun_2022']+data[y]['sep_2022']+data[y]['dec_2022']+data[y]['mar_2023']
+			break
+	for y in range(len(data)):
+		if data[y].get('account_name') == 'Total Expense (Debit)':
+			print('adding of account Total Expense (Debit)',data[y].get('jun_2022'))
+			data[y]['jun_2022'] =data[y]['jun_2022']-open_diff_june_22
+			data[y]['sep_2022'] =data[y]['sep_2022']-open_diff_sep_22
+			data[y]['dec_2022'] =data[y]['dec_2022']-open_diff_dec_22
+			data[y]['mar_2023'] =data[y]['mar_2023']-open_diff_mar_23
+			data[y]['total']=data[y]['jun_2022']+data[y]['sep_2022']+data[y]['dec_2022']+data[y]['mar_2023']
+			break
+	print("final data",data)
 	currency = filters.presentation_currency or frappe.get_cached_value(
 		"Company", filters.company, "default_currency"
 	)
