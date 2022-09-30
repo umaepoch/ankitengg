@@ -120,26 +120,26 @@ def execute(filters=None):
 		if data[x].get('account_name') == 'Closing Stocks' and filters.periodicity=="Quarterly":
 			print('quaterly data ----', data[x])
 			print('monthly data ----', sum_data[x])
-			data[x]['sep_2022'] = sum_data[x]['sep_2022']
-			data[x]['jun_2022'] = sum_data[x]['jun_2022']
-			data[x]['dec_2022'] = sum_data[x]['dec_2022']
-			data[x]['mar_2023'] = sum_data[x]['mar_2023']
 			close_diff_june_22=data[x]['jun_2022']-sum_data[x]['jun_2022']
 			close_diff_sep_22=data[x]['sep_2022']-sum_data[x]['sep_2022']
 			close_diff_dec_22=data[x]['dec_2022']-sum_data[x]['dec_2022']
 			close_diff_mar_23=data[x]['mar_2023']-sum_data[x]['mar_2023']
+			data[x]['sep_2022'] = sum_data[x]['sep_2022']
+			data[x]['jun_2022'] = sum_data[x]['jun_2022']
+			data[x]['dec_2022'] = sum_data[x]['dec_2022']
+			data[x]['mar_2023'] = sum_data[x]['mar_2023']
 			data[x]['total']=sum_data[x]['jun_2022']+sum_data[x]['sep_2022']+sum_data[x]['dec_2022']+sum_data[x]['mar_2023']
 		if data[x].get('account_name') == 'Opening Stock' and filters.periodicity=="Quarterly":
 			print('quaterly data ----', data[x])
 			print('monthly data ----', sum_data[x])
-			data[x]['sep_2022'] = sum_data[x]['jul_2022']
-			data[x]['jun_2022'] = sum_data[x]['apr_2022']
-			data[x]['dec_2022'] = sum_data[x]['oct_2022']
-			data[x]['mar_2023'] = sum_data[x]['jan_2023']
 			open_diff_june_22=data[x]['jun_2022']-sum_data[x]['apr_2022']
 			open_diff_sep_22=data[x]['sep_2022']-sum_data[x]['jul_2022']
 			open_diff_dec_22=data[x]['dec_2022']-sum_data[x]['oct_2022']
 			open_diff_mar_23=data[x]['mar_2023']- sum_data[x]['jan_2023']
+			data[x]['sep_2022'] = sum_data[x]['jul_2022']
+			data[x]['jun_2022'] = sum_data[x]['apr_2022']
+			data[x]['dec_2022'] = sum_data[x]['oct_2022']
+			data[x]['mar_2023'] = sum_data[x]['jan_2023']
 			data[x]['total']=sum_data[x]['apr_2022']+sum_data[x]['jul_2022']+sum_data[x]['oct_2022']+sum_data[x]['jan_2023']
 	for x in range(len(data)):
 		if data[x].get('account_name') == 'Closing Stocks':
