@@ -40,9 +40,9 @@ def fetch_parent(item_group):
 
 @frappe.whitelist()
 def get_group_parent1(item_group):
-    print("item_value",item_group)
+    print("selected item_group+++++++++++++++++++++++",item_group)
     if item_group == "Resistors":
-        print("RES")
+        print("RES+++++++++++++++")
         outerJson_b = {
         "doctype": "Document Naming Rule",
         "name":"",
@@ -52,9 +52,9 @@ def get_group_parent1(item_group):
         "prefix_digits":4,
         "conditions": []
         }
-        #print("outerJson",outerJson_b)
+        print("outerJson",outerJson_b)
         for conditions in item_group:
-            print("conditions",conditions)
+            print("conditions+++++++++++++++++",conditions)
             innerJson_b = {
             "field":"Item Group (item_group)",
             "condition":"=",
@@ -62,8 +62,8 @@ def get_group_parent1(item_group):
             "doctype": "Document Naming Rule Condition"
             }
         outerJson_b['conditions'].append(innerJson_b)
-        #print("inner",innerJson_b)
-        #print("Outer Json",outerJson_b)
+        print("inner ++++",innerJson_b)
+        print("Outer Json++++++",outerJson_b)
         doc = frappe.new_doc("Document Naming Rule")
         doc.update(outerJson_b)
         doc.save()
