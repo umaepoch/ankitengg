@@ -7,7 +7,7 @@ from datetime import datetime
 #import frappe, re
 #from frappe.model.document import Document
 #from frappe.model.naming import make_autoname
-		
+
 #bacancy 
 @frappe.whitelist()
 def fetch_item_group_parent(name):
@@ -40,9 +40,9 @@ def fetch_parent(item_group):
 
 @frappe.whitelist()
 def get_group_parent1(item_group):
-    print("selected item_group+++++++++++++++++++++++",item_group)
+    print("item_value",item_group)
     if item_group == "Resistors":
-        print("RES+++++++++++++++")
+        print("RES")
         outerJson_b = {
         "doctype": "Document Naming Rule",
         "name":"",
@@ -54,7 +54,7 @@ def get_group_parent1(item_group):
         }
         print("outerJson",outerJson_b)
         for conditions in item_group:
-            print("conditions+++++++++++++++++",conditions)
+            print("conditions",conditions)
             innerJson_b = {
             "field":"Item Group (item_group)",
             "condition":"=",
@@ -62,8 +62,38 @@ def get_group_parent1(item_group):
             "doctype": "Document Naming Rule Condition"
             }
         outerJson_b['conditions'].append(innerJson_b)
-        print("inner ++++",innerJson_b)
-        print("Outer Json++++++",outerJson_b)
+        print("inner-------------",innerJson_b)
+        print("Outer Json--------------",outerJson_b)
+        doc = frappe.new_doc("Document Naming Rule")
+        doc.update(outerJson_b)
+        doc.save()
+        print("doc",doc.name)
+        print("doc............",doc.prefix)
+        p_name = doc.prefix
+        return p_name 
+    elif item_group == "Capacitors":
+        print("cap")
+        outerJson_b = {
+        "doctype": "Document Naming Rule",
+        "name":"",
+        "document_type":"Item",
+        "priority":0,
+        "prefix":"CAP-",
+        "prefix_digits":4,
+        "conditions": []
+        }
+        #print("outerJson",outerJson_b)
+        for conditions in item_group:
+            print("conditions",conditions)
+            innerJson_b = {
+            "field":"Item Group (item_group)",
+            "condition":"=",
+            "value":item_group,
+            "doctype": "Document Naming Rule Condition"
+            }
+            outerJson_b['conditions'].append(innerJson_b)
+            print("inner +++++++++++++++++",innerJson_b)
+            print("Outer Json ++++++++++++",outerJson_b)
         doc = frappe.new_doc("Document Naming Rule")
         doc.update(outerJson_b)
         doc.save()
