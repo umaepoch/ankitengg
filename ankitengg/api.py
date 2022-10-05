@@ -8,6 +8,23 @@ from datetime import datetime
 #from frappe.model.document import Document
 #from frappe.model.naming import make_autoname
 
+#@frappe.whitelist()
+#def fetch_po_details(name):
+#	print("name",name)
+#	po_details=frappe.db.sql("""select supplier,address_display from `tabPurchase Order` where name ='"""+name+"""' """, as_dict=1)
+#	print("po_details",po_details)
+#	return po_details
+
+#@frappe.whitelist()
+#def set_supp_details_in_stock(name,purchase_order):
+#    suplier =frappe.db.sql("""select supplier,supplier_address,address_display from `tabPurchase Order` where name ='"""+purchase_order+"""' """, as_dict=1)
+#    stock = frappe.get_doc("Stock Entry",name)
+#    stock.supplier_name = suplier[0].supplier
+#    stock.supplier_address = suplier[0].supplier_address
+#    stock.address_display = suplier[0].address_display
+#    stock.save()
+#    frappe.db.commit()
+		
 #bacancy 
 @frappe.whitelist()
 def fetch_item_group_parent(name):
@@ -52,18 +69,28 @@ def get_group_parent1(item_group):
         "prefix_digits":4,
         "conditions": []
         }
-        print("outerJson",outerJson_b)
+        print("outerJson for resister",outerJson_b)
         for conditions in item_group:
             print("conditions",conditions)
             innerJson_b = {
-            "field":"Item Group (item_group)",
-            "condition":"=",
-            "value":item_group,
-            "doctype": "Document Naming Rule Condition"
+            "condition": "=",
+            "creation": None,
+            "docstatus" : 0,
+            "doctype" : "Document Naming Rule Condition",
+            "field" : "item_group",
+            "idx": None,
+            "modified": None,
+            "modified_by": "Administrator",
+            "name": " ",
+            "owner": "Administrator",
+            "parent": " ",
+            "parentfield": "conditions",
+            "parenttype": "Document Naming Rule",
+            "value": item_group,
             }
         outerJson_b['conditions'].append(innerJson_b)
-        print("inner-------------",innerJson_b)
-        print("Outer Json--------------",outerJson_b)
+        print("inner of resister",innerJson_b)
+        #print("Outer Json",outerJson_b)
         doc = frappe.new_doc("Document Naming Rule")
         doc.update(outerJson_b)
         doc.save()
@@ -82,18 +109,28 @@ def get_group_parent1(item_group):
         "prefix_digits":4,
         "conditions": []
         }
-        #print("outerJson",outerJson_b)
+        print("outerJson of capasitor ..............",outerJson_b)
         for conditions in item_group:
-            print("conditions",conditions)
+            #print("conditions",conditions)
             innerJson_b = {
-            "field":"Item Group (item_group)",
-            "condition":"=",
-            "value":item_group,
-            "doctype": "Document Naming Rule Condition"
+            "condition": "=",
+            "creation": None,
+            "docstatus" : 0,
+            "doctype" : "Document Naming Rule Condition",
+            "field" : "item_group",
+            "idx": None,
+            "modified": None,
+            "modified_by": "Administrator",
+            "name": " ",
+            "owner": "Administrator",
+            "parent": " ",
+            "parentfield": "conditions",
+            "parenttype": "Document Naming Rule",
+            "value": item_group,
             }
             outerJson_b['conditions'].append(innerJson_b)
-            print("inner +++++++++++++++++",innerJson_b)
-            print("Outer Json ++++++++++++",outerJson_b)
+            print("inner json of capasitor................",innerJson_b)
+            #print("Outer Json",outerJson_b)
         doc = frappe.new_doc("Document Naming Rule")
         doc.update(outerJson_b)
         doc.save()
