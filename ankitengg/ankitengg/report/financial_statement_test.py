@@ -172,7 +172,7 @@ def get_data_test(
 	accounts, accounts_by_name, parent_children_map = filter_accounts(accounts)
 
 	company_currency = get_appropriate_currency(company, filters)
-
+	print("accounts",accounts)
 	gl_entries_by_account = {}
 	for root in frappe.db.sql(
 		"""select lft, rgt from tabAccount
@@ -422,13 +422,13 @@ def set_gl_entries_by_account(
 	"""Returns a dict like { "account": [gl entries], ... }"""
 
 	additional_conditions = get_additional_conditions(from_date, ignore_closing_entries, filters)
-
+	print("additional_conditions",additional_conditions)
 	accounts = frappe.db.sql_list(
 		"""select name from `tabAccount`
 		where lft >= %s and rgt <= %s and company = %s""",
 		(root_lft, root_rgt, company),
 	)
-
+	print("accounts",accounts)
 	if accounts:
 		additional_conditions += " and account in ({})".format(
 			", ".join(frappe.db.escape(d) for d in accounts)
@@ -440,7 +440,7 @@ def set_gl_entries_by_account(
 			"to_date": to_date,
 			"finance_book": cstr(filters.get("finance_book")),
 		}
-
+		print("gl_filters",gl_filters)
 		if filters.get("include_default_book_entries"):
 			gl_filters["company_fb"] = frappe.db.get_value("Company", company, "default_finance_book")
 
@@ -491,13 +491,13 @@ def set_gl_entries_by_account(
 			gl_filters,
 			as_dict=True,
 		)  # nosec
-
+		print("gl_entries",gl_entries)
 		if filters and filters.get("presentation_currency"):
 			convert_to_presentation_currency(gl_entries, get_currency(filters), filters.get("company"))
 
 		for entry in gl_entries:
 			gl_entries_by_account.setdefault(entry.account, []).append(entry)
-
+		print("gl_entries_by_account",gl_entries_by_account)
 		return gl_entries_by_account
 
 
