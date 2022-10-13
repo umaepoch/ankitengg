@@ -43,7 +43,6 @@ def allow_single_series(pch_sc_item_series):
     list_of_all_values = [value for elem in details_First 
     for value in elem.values()]
     if value in list_of_all_values:
-        frappe.msgprint("This series is already Exist")
         return value
     else:
-        frappe.msgprint("This series already not Exist")
+        return value
