@@ -37,12 +37,7 @@ def add_series_to_naming_series(pch_sc_item_series):
 def allow_single_series(pch_sc_item_series):
     print("....................")
     print("name of first series ...........",pch_sc_item_series)
-    details_First=frappe.db.sql("""select pch_sc_item_series from `tabItem Group`""", as_dict=1)
+    #details_First=frappe.db.sql("""select pch_sc_item_series from `tabItem Group`""", as_dict=1)
+    details_First=frappe.db.sql("""select pch_sc_item_series from `tabItem Group` where pch_sc_item_series='"""+pch_sc_item_series+"""' """, as_dict=1)    
     print("parent first details",details_First)
-    value = pch_sc_item_series
-    list_of_all_values = [value for elem in details_First 
-    for value in elem.values()]
-    if value in list_of_all_values:
-        return value
-    else:
-        return value
+    return details_First
