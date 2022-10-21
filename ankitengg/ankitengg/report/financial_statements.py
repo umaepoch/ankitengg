@@ -20,7 +20,7 @@ from erpnext.accounts.report.utils import convert_to_presentation_currency, get_
 from erpnext.accounts.utils import get_fiscal_year
 
 
-def get_period_list_test(
+def get_period_list(
 	from_fiscal_year,
 	to_fiscal_year,
 	period_start_date,
@@ -45,7 +45,7 @@ def get_period_list_test(
 		year_start_date = getdate(period_start_date)
 		year_end_date = getdate(period_end_date)
 
-	months_to_add = {"Yearly": 12, "Half-Yearly": 6, "Quarterly": 1, "Monthly": 1}[periodicity]
+	months_to_add = {"Yearly": 12, "Half-Yearly": 6, "Quarterly": 3, "Monthly": 1}[periodicity]
 
 	period_list = []
 
@@ -152,7 +152,7 @@ def get_label(periodicity, from_date, to_date):
 	return label
 
 
-def get_data_test(
+def get_data(
 	company,
 	root_type,
 	balance_must_be,
@@ -172,7 +172,7 @@ def get_data_test(
 	accounts, accounts_by_name, parent_children_map = filter_accounts(accounts)
 
 	company_currency = get_appropriate_currency(company, filters)
-	print("accounts",accounts)
+
 	gl_entries_by_account = {}
 	for root in frappe.db.sql(
 		"""select lft, rgt from tabAccount
@@ -190,6 +190,7 @@ def get_data_test(
 			filters,
 			gl_entries_by_account,
 			ignore_closing_entries=ignore_closing_entries,
+			period_list=period_list,
 		)
 
 	calculate_values(
@@ -418,87 +419,127 @@ def set_gl_entries_by_account(
 	filters,
 	gl_entries_by_account,
 	ignore_closing_entries=False,
+	*,
+	period_list=None,
 ):
-	"""Returns a dict like { "account": [gl entries], ... }"""
+	"""
+	Returns a dict like { "account": [gl entries], ... }
+	Modified for ankitengg
+	"""
 
 	additional_conditions = get_additional_conditions(from_date, ignore_closing_entries, filters)
-	print("additional_conditions",additional_conditions)
+
 	accounts = frappe.db.sql_list(
 		"""select name from `tabAccount`
 		where lft >= %s and rgt <= %s and company = %s""",
 		(root_lft, root_rgt, company),
 	)
-	print("accounts",accounts)
-	if accounts:
-		additional_conditions += " and account in ({})".format(
-			", ".join(frappe.db.escape(d) for d in accounts)
+
+	if not accounts:
+		return
+
+	additional_conditions += " and account in ({})".format(
+		", ".join(frappe.db.escape(d) for d in accounts)
+	)
+
+	gl_filters = {
+		"company": company,
+		"from_date": from_date,
+		"to_date": to_date,
+		"finance_book": cstr(filters.get("finance_book")),
+	}
+
+	if filters.get("include_default_book_entries"):
+		gl_filters["company_fb"] = frappe.db.get_value("Company", company, "default_finance_book")
+
+	for key, value in filters.items():
+		if value:
+			gl_filters.update({key: value})
+
+	distributed_cost_center_query = ""
+	if filters and filters.get("cost_center"):
+		distributed_cost_center_query = """
+		UNION ALL
+		SELECT posting_date,
+			account,
+			debit*(DCC_allocation.percentage_allocation/100) as debit,
+			credit*(DCC_allocation.percentage_allocation/100) as credit,
+			is_opening,
+			fiscal_year,
+			debit_in_account_currency*(DCC_allocation.percentage_allocation/100) as debit_in_account_currency,
+			credit_in_account_currency*(DCC_allocation.percentage_allocation/100) as credit_in_account_currency,
+			account_currency
+		FROM `tabGL Entry`,
+		(
+			SELECT parent, sum(percentage_allocation) as percentage_allocation
+			FROM `tabDistributed Cost Center`
+			WHERE cost_center IN %(cost_center)s
+			AND parent NOT IN %(cost_center)s
+			GROUP BY parent
+		) as DCC_allocation
+		WHERE company=%(company)s
+		{additional_conditions}
+		AND posting_date <= %(to_date)s
+		AND is_cancelled = 0
+		AND cost_center = DCC_allocation.parent
+		""".format(
+			additional_conditions=additional_conditions.replace("and cost_center in %(cost_center)s ", "")
 		)
 
-		gl_filters = {
-			"company": company,
-			"from_date": from_date,
-			"to_date": to_date,
-			"finance_book": cstr(filters.get("finance_book")),
-		}
-		print("gl_filters",gl_filters)
-		if filters.get("include_default_book_entries"):
-			gl_filters["company_fb"] = frappe.db.get_value("Company", company, "default_finance_book")
+	gl_entries = frappe.db.sql(
+		"""select posting_date, account, debit, credit, is_opening, fiscal_year, debit_in_account_currency, credit_in_account_currency, account_currency from `tabGL Entry`
+		where company=%(company)s
+		{additional_conditions}
+		and posting_date <= %(to_date)s
+		and is_cancelled = 0
+		{distributed_cost_center_query}""".format(
+			additional_conditions=additional_conditions,
+			distributed_cost_center_query=distributed_cost_center_query,
+		),
+		gl_filters,
+		as_dict=True,
+	)  # nosec
 
-		for key, value in filters.items():
-			if value:
-				gl_filters.update({key: value})
+	if filters and filters.get("presentation_currency"):
+		convert_to_presentation_currency(gl_entries, get_currency(filters), filters.get("company"))
 
-		distributed_cost_center_query = ""
-		if filters and filters.get("cost_center"):
-			distributed_cost_center_query = """
-			UNION ALL
-			SELECT posting_date,
-				account,
-				debit*(DCC_allocation.percentage_allocation/100) as debit,
-				credit*(DCC_allocation.percentage_allocation/100) as credit,
-				is_opening,
-				fiscal_year,
-				debit_in_account_currency*(DCC_allocation.percentage_allocation/100) as debit_in_account_currency,
-				credit_in_account_currency*(DCC_allocation.percentage_allocation/100) as credit_in_account_currency,
-				account_currency
-			FROM `tabGL Entry`,
-			(
-				SELECT parent, sum(percentage_allocation) as percentage_allocation
-				FROM `tabDistributed Cost Center`
-				WHERE cost_center IN %(cost_center)s
-				AND parent NOT IN %(cost_center)s
-				GROUP BY parent
-			) as DCC_allocation
-			WHERE company=%(company)s
-			{additional_conditions}
-			AND posting_date <= %(to_date)s
-			AND is_cancelled = 0
-			AND cost_center = DCC_allocation.parent
-			""".format(
-				additional_conditions=additional_conditions.replace("and cost_center in %(cost_center)s ", "")
+	periodicity = filters and filters.get("periodicity") or "Yearly"
+	needs_special_treatment = periodicity != "Monthly"
+	if needs_special_treatment:
+		special_accounts = frappe.get_all(
+			"Account",
+			filters={"is_group": 0, "company": company},
+			or_filters={"pch_opening_month_only": 1, "pch_closing_month_only": 1},
+			fields=["name", "pch_opening_month_only", "pch_closing_month_only"],
+		)
+
+		opening_month_only = {d.name for d in special_accounts if d.pch_opening_month_only}
+		closing_month_only = {d.name for d in special_accounts if d.pch_closing_month_only}
+		special_accounts = opening_month_only | closing_month_only
+
+		opening_months_to_consider = set()
+		closing_months_to_consider = set()
+
+		for period in period_list:
+			opening_months_to_consider.add(period.from_date.month)
+			closing_months_to_consider.add(period.to_date.month)
+
+	for entry in gl_entries:
+		if (
+			not needs_special_treatment
+			or entry.account not in special_accounts
+			or (
+				entry.account in opening_month_only
+				and entry.posting_date.month in opening_months_to_consider
 			)
-
-		gl_entries = frappe.db.sql(
-			"""select posting_date, account, debit, credit, is_opening, fiscal_year, debit_in_account_currency, credit_in_account_currency, account_currency from `tabGL Entry`
-			where company=%(company)s
-			{additional_conditions}
-			and posting_date <= %(to_date)s
-			and is_cancelled = 0
-			{distributed_cost_center_query}""".format(
-				additional_conditions=additional_conditions,
-				distributed_cost_center_query=distributed_cost_center_query,
-			),
-			gl_filters,
-			as_dict=True,
-		)  # nosec
-		print("gl_entries",gl_entries)
-		if filters and filters.get("presentation_currency"):
-			convert_to_presentation_currency(gl_entries, get_currency(filters), filters.get("company"))
-
-		for entry in gl_entries:
+			or (
+				entry.account in closing_month_only
+				and entry.posting_date.month in closing_months_to_consider
+			)
+		):
 			gl_entries_by_account.setdefault(entry.account, []).append(entry)
-		print("gl_entries_by_account",gl_entries_by_account)
-		return gl_entries_by_account
+
+	return gl_entries_by_account
 
 
 def get_additional_conditions(from_date, ignore_closing_entries, filters):
@@ -560,7 +601,7 @@ def get_cost_centers_with_children(cost_centers):
 	return list(set(all_cost_centers))
 
 
-def get_columns_test(periodicity, period_list, accumulated_values=1, company=None):
+def get_columns(periodicity, period_list, accumulated_values=1, company=None):
 	columns = [
 		{
 			"fieldname": "account",
@@ -599,7 +640,7 @@ def get_columns_test(periodicity, period_list, accumulated_values=1, company=Non
 	return columns
 
 
-def get_filtered_list_for_consolidated_report_test(filters, period_list):
+def get_filtered_list_for_consolidated_report(filters, period_list):
 	filtered_summary_list = []
 	for period in period_list:
 		if period == filters.get("company"):

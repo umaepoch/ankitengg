@@ -1,13 +1,14 @@
-// Copyright (c) 2016, jyoti and contributors
-// For license information, please see license.txt
-/* eslint-disable */
+// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// License: GNU General Public License v3. See license.txt
+
+
 frappe.require("assets/erpnext/js/financial_statements.js", function() {
-	frappe.query_reports["PnL Periodic Inventory test"] = $.extend({},
+	frappe.query_reports["P&L - Periodic Inventory"] = $.extend({},
 		erpnext.financial_statements);
 
-	erpnext.utils.add_dimensions('PnL Periodic Inventory test', 10);
+	erpnext.utils.add_dimensions('P&L - Periodic Inventory', 10);
 
-	frappe.query_reports["PnL Periodic Inventory test"]["filters"].push(
+	frappe.query_reports["P&L - Periodic Inventory"]["filters"].push(
 		{
 			"fieldname": "project",
 			"label": __("Project"),
