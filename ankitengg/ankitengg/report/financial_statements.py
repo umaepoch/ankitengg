@@ -524,7 +524,6 @@ def set_gl_entries_by_account(
 			opening_months_to_consider.add(period.from_date.month)
 			closing_months_to_consider.add(period.to_date.month)
 
-	print(opening_month_only, closing_month_only, opening_months_to_consider, closing_months_to_consider)
 	for entry in gl_entries:
 		if (
 			not needs_special_treatment
